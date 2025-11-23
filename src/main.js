@@ -119,3 +119,12 @@ if (canvas) {
     animate();
 }
 
+// --- DISABLE RIGHT CLICK & INSPECT SHORTCUTS (Optional Security) ---
+document.addEventListener('contextmenu', event => event.preventDefault());
+document.addEventListener('keydown', event => {
+    if (event.code === 'F12' || 
+       (event.ctrlKey && event.shiftKey && event.code === 'KeyI') || 
+       (event.metaKey && event.altKey && event.code === 'KeyI')) {
+        event.preventDefault();
+    }
+});
