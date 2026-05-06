@@ -62,6 +62,47 @@ groc config set woolworths-api-key <key>
 
 Without a key the adapter falls back to the public endpoint (lower rate limits).
 
+## MCP server (Claude / AI chatbot integration)
+
+groc-mate ships an [MCP server](https://modelcontextprotocol.io) so AI assistants like Claude can call it as a tool with natural language — no commands needed.
+
+### Setup in Claude Desktop
+
+Add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "groc-mate": {
+      "command": "groc-mcp"
+    }
+  }
+}
+```
+
+Then restart Claude Desktop. You can now ask Claude things like:
+
+> "What's the cheapest oat milk at Woolworths or Coles?"
+> "Add ingredients for pasta carbonara to my grocery list"
+> "Fill my Woolworths cart and give me the link"
+
+### Available MCP tools
+
+| Tool | What it does |
+|---|---|
+| `search_products` | Search across Woolworths, Coles, Aldi |
+| `compare_prices` | Side-by-side price for one item, highlights cheapest |
+| `list_add` | Add items to grocery list |
+| `list_view` | Show list with live prices and estimated totals |
+| `list_clear` | Clear the list |
+| `fill_cart` | Fill Woolworths/Coles cart, return URL to click and pay |
+| `plan_meal` | Extract ingredients from a meal description (uses Claude API) |
+| `find_stores` | Find nearby stores by suburb |
+
+### Cart fill + login
+
+The first time you run `fill_cart`, groc-mate opens a visible browser window and waits for you to log in to Woolworths or Coles. Once you're logged in, the session is saved and subsequent cart fills run in the background automatically.
+
 ## Legal
 
 Cart automation is a ToS violation for Woolworths and Coles. groc-mate shows a warning before every cart fill. Use at your own risk. See `GROC_MATE_RESEARCH.md` for the full legal analysis.

@@ -1,5 +1,5 @@
 import type { Page } from 'patchright'
-import { getBrowserContext, humanDelay } from './browser.js'
+import { getBrowserContext, humanDelay, ensureLoggedIn } from './browser.js'
 import type { CartResult } from '../adapters/types.js'
 import type { CartItem } from './woolworths.cart.js'
 
@@ -11,6 +11,8 @@ export async function fillColesCart(
   sessionCookie?: string | null,
   headless = true,
 ): Promise<CartResult> {
+  await ensureLoggedIn('coles')
+
   const context = await getBrowserContext('coles', sessionCookie, headless)
 
   // Inject Coles-specific domain for cookies

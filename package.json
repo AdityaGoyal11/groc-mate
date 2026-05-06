@@ -4,7 +4,8 @@
   "description": "Search, compare, and auto-fill grocery carts across Woolworths, Coles, and Aldi",
   "type": "module",
   "bin": {
-    "groc": "./dist/cli/index.js"
+    "groc": "./dist/cli/index.js",
+    "groc-mcp": "./dist/mcp/server.js"
   },
   "scripts": {
     "build": "tsup",
@@ -16,6 +17,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.7.0",
     "axios-retry": "^4.5.0",
     "better-sqlite3": "^11.5.0",

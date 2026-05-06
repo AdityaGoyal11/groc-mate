@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['src/cli/index.ts', 'src/api/server.ts'],
+  entry: ['src/cli/index.ts', 'src/mcp/server.ts'],
   format: ['esm'],
   target: 'node20',
   splitting: false,
@@ -11,5 +11,5 @@ export default defineConfig({
   banner: {
     js: '#!/usr/bin/env node',
   },
-  onSuccess: 'chmod +x dist/cli/index.js',
+  onSuccess: 'chmod +x dist/cli/index.js dist/mcp/server.js',
 })

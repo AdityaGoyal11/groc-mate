@@ -2,7 +2,7 @@ import { chromium } from 'patchright'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { mkdirSync } from 'node:fs'
-import type { BrowserContext } from 'patchright'
+import type { BrowserContext, Page } from 'patchright'
 
 const profileDir = join(homedir(), '.config', 'groc-mate', 'browser-profiles')
 mkdirSync(profileDir, { recursive: true })
@@ -62,4 +62,74 @@ async function injectCookieString(context: BrowserContext, raw: string): Promise
 /** Human-like delay: random ms between min and max */
 export function humanDelay(minMs = 500, maxMs = 1500): Promise<void> {
   return new Promise((r) => setTimeout(r, minMs + Math.random() * (maxMs - minMs)))
+}
+
+// ---------------------------------------------------------------------------
+// Login detection + guided login flow
+// ---------------------------------------------------------------------------
+
+const LOGIN_URLS: Record<string, string> = {
+  woolworths: 'https://www.woolworths.com.au/account/login',
+  coles: 'https://www.coles.com.au/sign-in',
+}
+
+const ACCOUNT_URLS: Record<string, string> = {
+  woolworths: 'https://www.woolworths.com.au/account/dashboard',
+  coles: 'https://www.coles.com.au/account',
+}
+
+// URL path fragments that indicate the user is on a login page (i.e. not logged in)
+const LOGIN_FRAGMENTS: Record<string, string[]> = {
+  woolworths: ['/account/login', '/signin'],
+  coles: ['/sign-in', '/login'],
+}
+
+/**
+ * Checks whether the persistent browser profile already has a valid session.
+ * If not, opens a visible window so the user can log in, then closes the window —
+ * cookies persist to disk in the persistent profile and are reused for headless automation.
+ */
+export async function ensureLoggedIn(storeId: string): Promise<void> {
+  // Always use a visible context here so the user can interact if needed
+  const context = await getBrowserContext(storeId, null, false)
+  const page = await context.newPage()
+
+  try {
+    const loggedIn = await checkLoginState(page, storeId)
+    if (!loggedIn) {
+      process.stdout.write(
+        `\n[groc-mate] Not logged in to ${storeId}. Please log in using the browser window that opened.\n` +
+        `           groc-mate will continue automatically once login is complete.\n\n`,
+      )
+      await page.goto(LOGIN_URLS[storeId]!, { waitUntil: 'domcontentloaded' })
+      await waitForLogin(page, storeId)
+      process.stdout.write(`[groc-mate] Logged in to ${storeId}. Starting cart fill…\n\n`)
+    }
+  } finally {
+    await context.close()
+  }
+}
+
+async function checkLoginState(page: Page, storeId: string): Promise<boolean> {
+  const fragments = LOGIN_FRAGMENTS[storeId]!
+  try {
+    await page.goto(ACCOUNT_URLS[storeId]!, { waitUntil: 'domcontentloaded', timeout: 15_000 })
+  } catch {
+    // Network timeout — assume not logged in to be safe
+    return false
+  }
+  const url = page.url()
+  return !fragments.some((f) => url.includes(f))
+}
+
+async function waitForLogin(page: Page, storeId: string): Promise<void> {
+  const fragments = LOGIN_FRAGMENTS[storeId]!
+  // Poll until the URL is no longer a login page
+  await page.waitForFunction(
+    (frags: string[]) => !frags.some((f) => window.location.href.includes(f)),
+    fragments,
+    { timeout: 300_000, polling: 1500 },
+  )
+  // Let session cookies settle before we close the context and flush to disk
+  await humanDelay(2000, 3000)
 }

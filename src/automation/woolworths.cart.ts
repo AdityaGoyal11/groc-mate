@@ -1,5 +1,5 @@
 import type { BrowserContext, Page } from 'patchright'
-import { getBrowserContext, humanDelay } from './browser.js'
+import { getBrowserContext, humanDelay, ensureLoggedIn } from './browser.js'
 import type { CartResult } from '../adapters/types.js'
 
 const BASE_URL = 'https://www.woolworths.com.au'
@@ -16,6 +16,11 @@ export async function fillWoolworthsCart(
   sessionCookie?: string | null,
   headless = true,
 ): Promise<CartResult> {
+  // Check login state and guide user through login if needed.
+  // The persistent profile stores cookies on disk, so the headless context below
+  // will automatically pick them up.
+  await ensureLoggedIn('woolworths')
+
   const context = await getBrowserContext('woolworths', sessionCookie, headless)
 
   try {
